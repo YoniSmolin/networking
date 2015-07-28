@@ -1,5 +1,5 @@
 /*
- ** server.hpp - a header file for the server class 
+ ** Server.hpp - a header file for the server class 
  */
 
 #ifndef SERVER_HPP
