@@ -9,5 +9,6 @@ int main(int argc, char** argv)
 	//server.WaitForClient();
 	//server.Transmit(data);
 	cout << "Successfully initialized server" << endl;
+	server.WaitForClient();
 	return 0;
 }
