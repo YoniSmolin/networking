@@ -17,6 +17,7 @@
 #include <sys/wait.h>
 
 #include <iostream>
+#include <string.h>
 
 #include "Server.hpp" 
 
@@ -98,7 +99,7 @@ void Server::WaitForClient()
 	cout << "server: waiting for connection..." << endl;
 
 	sin_size = sizeof their_addr;
-	_sockfd = accept(_sockfd, (struct sockaddr *)&their_addr, &sin_size);
+	int newfd = accept(_sockfd, (struct sockaddr *)&their_addr, &sin_size);
 	if (_sockfd == -1)
 	{
 		perror("accept");
@@ -108,6 +109,30 @@ void Server::WaitForClient()
 	inet_ntop(their_addr.ss_family,	get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
 	cout << "server: got connection from " << s << endl;
 	
+	close(_sockfd);
+	
+	_sockfd = newfd; // TODO: in the future, we would like to keep both sockets open,
+			 //       one for listening and the other for sending data. 
+}
+
+int  Server::SendMessage(const char* message, int length)
+{
+	if (send(_sockfd, message, length, 0) == -1)
+		perror("send");
+	return 0;
+}
+
+int  Server::SendMatrix(char* matrix, int rowCount, int colCount)
+{
+	for(int row = 0; row < rowCount; row++)
+		SendMessage(matrix + colCount*row, rowCount);
+
+	return 0;
+}
+
+
+void Server::CloseConnection()
+{
 	close(_sockfd);
 }
 
@@ -125,5 +150,3 @@ void* Server::get_in_addr(struct sockaddr *sa)
 
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
-
-

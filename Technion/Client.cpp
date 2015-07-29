@@ -18,11 +18,12 @@
 
 #include "Client.hpp"
 
+
 using namespace std;
 
 Client::Client() {}
 
-void Client::ConnectToServer(const char* serverName, const char* portNumber)
+int Client::ConnectToServer(const char* serverName, const char* portNumber)
 {
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
@@ -34,7 +35,7 @@ void Client::ConnectToServer(const char* serverName, const char* portNumber)
 
 	if ((rv = getaddrinfo(serverName, portNumber, &hints, &servinfo)) != 0) {
 		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-		exit(1);
+		return 1;
 	}
 
 	// loop through all the results and connect to the first we can
@@ -58,13 +59,15 @@ void Client::ConnectToServer(const char* serverName, const char* portNumber)
 
 	if (p == NULL) {
 		fprintf(stderr, "client: failed to connect\n");
-		exit(2);
+		return 2;
 	}
 
 	inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
 	printf("client: connecting to %s\n", s);
 
 	freeaddrinfo(servinfo); // all done with this structure
+	
+	return 0;
 }
 
 // get sockaddr, IPv4 or IPv6:
@@ -75,6 +78,34 @@ void* Client::get_in_addr(struct sockaddr *sa)
 	}
 
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
+int Client::ReceiveMessage(char* message, int length)
+{
+	int numbytes;
+
+	if ((numbytes = recv(_sockfd, message, length-1, 0)) == -1)
+	{
+	    perror("recv");
+	    return 1; 
+	}
+
+	message[numbytes] = '\0';
+
+	return 0;
+}
+
+int Client::ReceiveMatrix(char* matrix, int rowCount, int colCount)
+{
+	for(int row = 0; row < rowCount; row++)
+		ReceiveMessage(matrix + colCount*row, rowCount);
+
+	return 0;
+}
+
+void Client::CloseConnection()
+{
+	close(_sockfd);
 }
 
 
