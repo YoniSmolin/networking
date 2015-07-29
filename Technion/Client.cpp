@@ -84,13 +84,11 @@ int Client::ReceiveMessage(char* message, int length)
 {
 	int numbytes;
 
-	if ((numbytes = recv(_sockfd, message, length-1, 0)) == -1)
+	if ((numbytes = recv(_sockfd, message, length, 0)) == -1)
 	{
 	    perror("recv");
 	    return 1; 
 	}
-
-	message[numbytes] = '\0';
 
 	return 0;
 }
@@ -99,7 +97,7 @@ int Client::ReceiveMatrix(char* matrix, int rowCount, int colCount)
 {
 	for(int row = 0; row < rowCount; row++)
 		ReceiveMessage(matrix + colCount*row, rowCount);
-
+	
 	return 0;
 }
 
