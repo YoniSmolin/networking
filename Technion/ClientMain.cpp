@@ -16,6 +16,8 @@ using namespace cv;
 #define ROWS 512 
 #define COLS 512
 
+#define NUM_FRAMES 1000
+
 int main(int argc, char** argv)
 {
 	uchar imageArray[ROWS*COLS];
@@ -23,13 +25,20 @@ int main(int argc, char** argv)
 	Client client;
 	cout << "Initialized client successfully" << endl;
 	client.ConnectToServer(SERVER_NAME, PORT);
-	client.ReceiveMatrix((char*)imageArray, ROWS, COLS); 
+
+	namedWindow("ramp",1);
+
+	// sending loop
+	for(int frame = 0; frame < NUM_FRAMES; frame ++)
+	{
+		client.ReceiveMatrix((char*)imageArray, ROWS, COLS); 
+		Mat image = Mat(ROWS, COLS, CV_8UC1, imageArray);
+		imshow("ramp", image);
+		waitKey(1);
+	}
+
 	client.CloseConnection();
 	cout << "Connection closed" << endl;
 	
-	Mat image = Mat(ROWS, COLS, CV_8UC1, imageArray);
-	imshow("ramp", image);
-	waitKey();
-
 	return 0;
 }
