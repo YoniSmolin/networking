@@ -13,7 +13,7 @@ using namespace std;
 #define COLS 512
 
 #define NUM_FRAMES 1000
-#define FRAME_CYCLE 5000
+#define FRAME_CYCLE 1000
 
 int main(int argc, char** argv)
 {
