@@ -2,23 +2,26 @@
 
 #include <iostream>
 #include <string.h>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
 
 #define PORT "3490"
 
-#define MESSAGE "1111222233334444"
-#define ROWS 4
-#define COLS 4
+#define ROWS 512
+#define COLS 512
 
 int main(int argc, char** argv)
 {
-	string message = MESSAGE;
+	uchar imageArray[ROWS*COLS];
+	for(int i = 0; i < ROWS; i++)
+		for(int j = 0; j<COLS; j++)
+			imageArray[i*COLS + j] = (uchar)(255.f * j / COLS);
+
 	Server server(PORT);
 	cout << "Successfully initialized server" << endl;
 	server.WaitForClient();
-	//server.SendMessage(message.c_str(), message.length());
-	server.SendMatrix(message.c_str(), ROWS, COLS);
+	server.SendMatrix((char*)imageArray, ROWS, COLS);
 	server.CloseConnection();
 	cout << "Connection closed" << endl;
 	return 0;

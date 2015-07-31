@@ -4,34 +4,32 @@
 
 #include "Client.hpp"
 
+#include <opencv2/highgui/highgui.hpp>
 #include <iostream>
+
 using namespace std;
+using namespace cv;
 
 #define PORT "3490"
 #define SERVER_NAME "localhost"
-#define MAXDATASIZE 512
 
-#define MESSAGE "1111222233334444"
-#define ROWS 4
-#define COLS 4
+#define ROWS 512 
+#define COLS 512
 
 int main(int argc, char** argv)
 {
-	string expectedMessage = MESSAGE;
-	char message[MAXDATASIZE];
+	uchar imageArray[ROWS*COLS];
 
 	Client client;
 	cout << "Initialized client successfully" << endl;
 	client.ConnectToServer(SERVER_NAME, PORT);
-	//client.ReceiveMessage(message, MAXDATASIZE);
-	client.ReceiveMatrix(message, ROWS, COLS); 
-	message[ROWS*COLS] = '\0';
-	cout << "Following message received: " << message << endl;
+	client.ReceiveMatrix((char*)imageArray, ROWS, COLS); 
 	client.CloseConnection();
-	if (expectedMessage.compare(message) == 0)
-		cout << "This is the message we were expecting" << endl;
-	else
-		cout << "This is not the message we were expecting" << endl;
 	cout << "Connection closed" << endl;
+	
+	Mat image = Mat(ROWS, COLS, CV_8UC1, imageArray);
+	imshow("ramp", image);
+	waitKey();
+
 	return 0;
 }
