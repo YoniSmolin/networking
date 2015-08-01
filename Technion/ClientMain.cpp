@@ -31,7 +31,10 @@ int main(int argc, char** argv)
 	// sending loop
 	for(int frame = 0; frame < NUM_FRAMES; frame ++)
 	{
-		client.ReceiveMatrix((char*)imageArray, ROWS, COLS); 
+		int numbytes = client.ReceiveMatrix((char*)imageArray, ROWS, COLS); 
+		
+		if (numbytes == 0) break;
+
 		Mat image = Mat(ROWS, COLS, CV_8UC1, imageArray);
 		imshow("ramp", image);
 		waitKey(1);

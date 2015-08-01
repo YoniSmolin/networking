@@ -90,15 +90,17 @@ int Client::ReceiveMessage(char* message, int length)
 	    return 1; 
 	}
 
-	return 0;
+	return numbytes;
 }
 
 int Client::ReceiveMatrix(char* matrix, int rowCount, int colCount)
 {
-	for(int row = 0; row < rowCount; row++)
-		ReceiveMessage(matrix + colCount*row, rowCount);
+	int numbytes = 0;
 	
-	return 0;
+	for(int row = 0; row < rowCount; row++)
+		numbytes += ReceiveMessage(matrix + colCount*row, rowCount);
+	
+	return numbytes;
 }
 
 void Client::CloseConnection()
