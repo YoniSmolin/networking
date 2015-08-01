@@ -98,7 +98,7 @@ int Client::ReceiveMatrix(char* matrix, int rowCount, int colCount)
 	int numbytes = 0;
 	
 	for(int row = 0; row < rowCount; row++)
-		numbytes += ReceiveMessage(matrix + colCount*row, rowCount);
+		numbytes += ReceiveMessage(matrix + colCount*row, colCount);
 	
 	return numbytes;
 }
@@ -107,5 +107,3 @@ void Client::CloseConnection()
 {
 	close(_sockfd);
 }
-
-

@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 		if (numbytes == 0) break;
 
 		Mat image = Mat(ROWS, COLS, CV_8UC1, imageArray);
-		imshow("ramp", image);
+		imshow("Kinect Depth Client", image);
 		waitKey(1);
 	}
 

@@ -125,7 +125,7 @@ int  Server::SendMessage(const char* message, int length)
 int  Server::SendMatrix(const char* matrix, int rowCount, int colCount)
 {
 	for(int row = 0; row < rowCount; row++)
-		SendMessage(matrix + colCount*row, rowCount);
+		SendMessage(matrix + colCount*row, colCount);
 
 	return 0;
 }
