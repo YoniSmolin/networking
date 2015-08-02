@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 	cout << "Initialized client successfully" << endl;
 	client.ConnectToServer(SERVER_NAME, PORT);
 
-	namedWindow("ramp",1);
+	namedWindow("Client");
 
 	// sending loop
 	for(int frame = 0; frame < NUM_FRAMES; frame ++)
@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 		if (numbytes == 0) break;
 
 		Mat image = Mat(ROWS, COLS, CV_8UC1, imageArray);
-		imshow("Kinect Depth Client", image);
+		imshow("Client", image);
 		waitKey(1);
 	}
 
