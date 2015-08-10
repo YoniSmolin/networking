@@ -88,13 +88,27 @@ int Client::ConnectToServer(const char* serverName, const char* portNumber)
 
 int Client::ReceiveMessage(char* message, int length)
 {
-	int iResult;
+	int numBytes;
 
-	iResult = recv(_sockfd, message, length, 0);
-	if (iResult < 0)
+	numBytes = recv(_sockfd, message, length, 0);
+	if (numBytes < 0)
 		printf("recv failed: %d\n", WSAGetLastError());
 
-	return iResult;
+	return numBytes;
+}
+
+int Client::ReceiveMatrix(char* matrix, int rowCount, int colCount)
+{
+	int totalReceived = 0;
+		
+	while (totalReceived < rowCount*colCount)
+	{
+		totalReceived += ReceiveMessage(matrix + totalReceived, rowCount*colCount - totalReceived);
+		if (totalReceived == 0)
+			break;
+	}
+
+	return totalReceived;
 }
 
 void Client::CloseConnection()
