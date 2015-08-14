@@ -5,11 +5,12 @@
 #define FPS_TIMER_H
 
 #include <windows.h>
+#include <string>
 
 class Timer
 {
 public:
-	Timer();
+	Timer(char* name);
 
 	void Start();
 	void Stop();
@@ -19,7 +20,8 @@ private:
 	int _sampleCounter;
 	LARGE_INTEGER _start, _end, _frequency;
 	float _accumulated;
-
+	
+	std::string _name;
 };
 
 #endif

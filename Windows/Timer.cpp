@@ -4,7 +4,7 @@
 #include "Timer.h"
 #include <stdio.h>
 
-Timer::Timer() : _sampleCounter(0), _accumulated(0)
+Timer::Timer(char* name) : _sampleCounter(0), _accumulated(0), _name(name)
 {
 	QueryPerformanceFrequency(&_frequency);
 }
@@ -22,7 +22,8 @@ void Timer::Stop()
 
 	if (_sampleCounter == WindowSize)
 	{
-		printf("FPS: %2.1f [Hz]\n", _frequency.QuadPart / (_accumulated / WindowSize));
+		float cycle = _accumulated / WindowSize;
+		printf("%s : Cycle - %2.1f [mSec], Rate - %2.1f [Hz] \n", _name.c_str(), 1000 * cycle / _frequency.QuadPart, _frequency.QuadPart / cycle);
  		_accumulated = 0;
 		_sampleCounter = 0;
 	}

@@ -31,13 +31,17 @@ int main(int argc, char** argv)
 
 	namedWindow("Client");
 		
-	Timer timer;
+	Timer totalTime("Network + Processing");
+	Timer networkTime("Network alone");
 
 	while (1)
 	{
-		timer.Start(); 
-
+		totalTime.Start(); 
+		networkTime.Start();
+		
 		int numbytes = client.ReceiveMatrix((char*)imageArray, ROWS, COLS);
+		
+		networkTime.Stop();
 
 		if (numbytes == 0) break;
 
@@ -45,7 +49,7 @@ int main(int argc, char** argv)
 		imshow("Client", image);
 		waitKey(1);
 
-		timer.Stop();
+		totalTime.Stop();
 	}
 
 	client.CloseConnection();
