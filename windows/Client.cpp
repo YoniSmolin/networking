@@ -111,6 +111,13 @@ int Client::ReceiveMatrix(char* matrix, int rowCount, int colCount)
 	return totalReceived;
 }
 
+int Client::ReceiveMatrix(float* matrix, int rowCount, int colCount)
+{
+	if (sizeof(float) != 4)
+		throw "Server::ReceiveMatrix - size of float on this machine must be 32 bits\n";
+
+	return ReceiveMatrix((char*)matrix, rowCount, sizeof(float)*colCount);
+}
 void Client::CloseConnection()
 {
 	// cleanup

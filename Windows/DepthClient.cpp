@@ -18,11 +18,12 @@ using namespace cv;
 #define ROWS 424
 #define COLS 512
 
-#define NUM_FRAMES 1000
+#define MAX_DISTANCE_MM 4500.0f
 
 int main(int argc, char** argv)
 {
-	uchar imageArray[ROWS*COLS];
+	float imageArray[ROWS*COLS];
+	Mat scaledDepth;
 
 	Client client;
 	cout << "Initialized client successfully" << endl;
@@ -39,14 +40,15 @@ int main(int argc, char** argv)
 		totalTime.Start(); 
 		networkTime.Start();
 		
-		int numbytes = client.ReceiveMatrix((char*)imageArray, ROWS, COLS);
+		int numbytes = client.ReceiveMatrix(imageArray, ROWS, COLS);
 		
 		networkTime.Stop();
 
 		if (numbytes == 0) break;
 
-		Mat image = Mat(ROWS, COLS, CV_8UC1, imageArray);
-		imshow("Client", image);
+		Mat image = Mat(ROWS, COLS, CV_32FC1, imageArray) / MAX_DISTANCE_MM;
+		image.convertTo(scaledDepth, CV_8UC1, 255, 0);
+		imshow("Client", scaledDepth);
 		waitKey(1);
 
 		totalTime.Stop();

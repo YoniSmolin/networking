@@ -17,6 +17,7 @@ public:
 	int ConnectToServer(const char* serverName, const char* portNumber);
 	int ReceiveMessage(char* message, int length);
 	int ReceiveMatrix(char* matrix, int rowCount, int colCount);
+	int ReceiveMatrix(float* matrix, int rowCount, int colCount);
 	void CloseConnection();
 
 private:
