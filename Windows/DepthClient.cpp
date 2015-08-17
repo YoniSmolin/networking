@@ -22,10 +22,9 @@ using namespace cv;
 
 int main(int argc, char** argv)
 {
-	float imageArray[ROWS*COLS];
-	Mat scaledDepth;
-
-	Client client;
+	uchar imageBuffer1[ROWS*COLS], imageBuffer2[ROWS*COLS];
+	
+	Client client(ROWS, COLS);
 	cout << "Initialized client successfully" << endl;
 	client.ConnectToServer(SERVER_NAME, PORT);
 	cout << "Connected to server successfully" << endl;
@@ -35,21 +34,28 @@ int main(int argc, char** argv)
 	Timer totalTime("Network + Processing");
 	Timer networkTime("Network alone");
 
+	uchar* current = imageBuffer1;
+	uchar* previous = imageBuffer2;
+
 	while (1)
 	{
 		totalTime.Start(); 
 		networkTime.Start();
 		
-		int numbytes = client.ReceiveMatrix(imageArray, ROWS, COLS);
+		int numbytes = client.ReceiveCompressed(previous, current, ROWS, COLS);
 		
 		networkTime.Stop();
 
 		if (numbytes == 0) break;
 
-		Mat image = Mat(ROWS, COLS, CV_32FC1, imageArray) / MAX_DISTANCE_MM;
-		image.convertTo(scaledDepth, CV_8UC1, 255, 0);
-		imshow("Client", scaledDepth);
+		Mat image = Mat(ROWS, COLS, CV_8UC1, current);
+		imshow("Client", image);
 		waitKey(1);
+
+		// swap the buffers
+		uchar* tmp = previous;
+		previous = current;
+		current = tmp;
 
 		totalTime.Stop();
 	}
@@ -62,3 +68,5 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+
+
