@@ -7,14 +7,13 @@
 
 #include "Client.h"
 
-#define BYTES_PER_COMPRESSED_PIXEL 3
+#define BYTES_PER_COMPRESSED_PIXEL 4
 #define BYTES_IN_HEADER 3
-#define BYTE 8
+#define BITS_IN_BYTE 8 
+#define LAST_TWO_LSBS 0x03
+#define FIRST_MSB  0x80
 
-Client::Client(int rowCount, int colCount) 
-{
-	_compressedImageBuffer = new char[rowCount * colCount * BYTES_PER_COMPRESSED_PIXEL];
-}
+Client::Client(int rowCount, int colCount) : _compressedImageBuffer(NULL) {	}
 
 int Client::ConnectToServer(const char* serverName, const char* portNumber)
 {
@@ -23,7 +22,7 @@ int Client::ConnectToServer(const char* serverName, const char* portNumber)
 	int iResult;
 
 	// Initialize Winsock
-	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData); 
 	if (iResult != 0) {
 		printf("WSAStartup failed: %d\n", iResult);
 		return 1;
@@ -109,8 +108,7 @@ int Client::ReceiveMatrix(char* matrix, int rowCount, int colCount)
 	int expectedBytes = rowCount * colCount;
 	int totalReceived = waitUntilReceived(matrix, expectedBytes);
 
-	if (totalReceived < expectedBytes)
-		return 0;
+	return totalReceived;
 }
 
 int Client::ReceiveMatrix(float* matrix, int rowCount, int colCount)
@@ -123,32 +121,38 @@ int Client::ReceiveMatrix(float* matrix, int rowCount, int colCount)
 
 int Client::ReceiveCompressed(const uchar* reference, uchar* received, int rowCount, int colCount)
 {
+	if (_compressedImageBuffer == NULL)
+		_compressedImageBuffer = new char[rowCount * colCount * BYTES_PER_COMPRESSED_PIXEL];
+
 	// initialize received
 	memcpy(received, reference, colCount * rowCount);
 
 	uchar header[BYTES_IN_HEADER];
 	int totalReceived = waitUntilReceived((char*)header, BYTES_IN_HEADER);
-	if (totalReceived < BYTES_IN_HEADER)
+	if (totalReceived < BYTES_IN_HEADER) // totalReceived will be less than BYTES_IN_HEASER only if server has closed connection
 		return 0;
 
 	// reconstruct the length of the compressed image from the header
 	int compressedLength = header[0];
-	compressedLength +=    header[1] << BYTE;
-	compressedLength +=    header[2] << 2*BYTE;
+	compressedLength +=    header[1] << BITS_IN_BYTE;
+	compressedLength += header[2] << 2 * BITS_IN_BYTE;
 
 	// reconstruct the image itself
 	totalReceived = waitUntilReceived(_compressedImageBuffer, compressedLength);
-	if (totalReceived < compressedLength)
+	if (totalReceived < compressedLength) // totalReceived will be less than BYTES_IN_HEASER only if server has closed connection
 		return 0;
 
 	int indexCompressed = 0;
+	int shift = 0;
 	while (indexCompressed < compressedLength)
 	{
-		int imageIndex = (uchar)_compressedImageBuffer[indexCompressed++]; // obtain 8 LSBs of index
-		imageIndex += (uchar)_compressedImageBuffer[indexCompressed++] << BYTE; // obtain next 8 LSBs
-		imageIndex += ((uchar)_compressedImageBuffer[indexCompressed] & 3) << BYTE * 2; // obtain final 2 most significant bits of the index are the lower 2 bits of this byte
-		received[imageIndex] += _compressedImageBuffer[indexCompressed] >> 2; // the upper 6 bits are the difference which needs to be added to the reference image in order to decompress
-		indexCompressed++;
+		uchar firstByte = (uchar)_compressedImageBuffer[indexCompressed++];
+		uchar secondByte = (uchar)_compressedImageBuffer[indexCompressed++];
+		uchar thirdByte = (uchar)_compressedImageBuffer[indexCompressed++];
+		char fourthByte = _compressedImageBuffer[indexCompressed++]; // fourth byte is signed
+
+		int imageIndex = firstByte + (secondByte << BITS_IN_BYTE) + ((thirdByte & LAST_TWO_LSBS) << BITS_IN_BYTE *2); 
+		received[imageIndex] += (((int)fourthByte) << 1) + ((thirdByte & FIRST_MSB) >> (BITS_IN_BYTE - 1)); // the casts in this line are very important - think them through when reading
 	}
 
 	return compressedLength + BYTES_IN_HEADER;
@@ -181,5 +185,6 @@ void Client::CloseConnection()
 
 Client::~Client()
 {
-	delete[] _compressedImageBuffer;
+	if (_compressedImageBuffer != NULL)
+		delete[] _compressedImageBuffer;
 }

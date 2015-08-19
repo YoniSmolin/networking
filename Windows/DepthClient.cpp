@@ -37,13 +37,24 @@ int main(int argc, char** argv)
 	uchar* current = imageBuffer1;
 	uchar* previous = imageBuffer2;
 
+	bool firstRound = true;
+
 	while (1)
 	{
 		totalTime.Start(); 
 		networkTime.Start();
 		
-		int numbytes = client.ReceiveCompressed(previous, current, ROWS, COLS);
-		
+		int numbytes;
+		if (firstRound)
+		{
+			numbytes = client.ReceiveMatrix((char*)current, ROWS, COLS);
+			firstRound = false;
+		}
+		else
+			numbytes = client.ReceiveCompressed(previous, current, ROWS, COLS);
+
+		cout << "Received " << numbytes << " Bytes" << endl;
+
 		networkTime.Stop();
 
 		if (numbytes == 0) break;
