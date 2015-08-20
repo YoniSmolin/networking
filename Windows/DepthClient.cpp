@@ -18,6 +18,8 @@ using namespace cv;
 #define ROWS 424
 #define COLS 512
 
+#define FRAMES_BETWEEN_TELEMETRY_MESSAGES 30
+
 #define MAX_DISTANCE_MM 4500.0f
 
 int main(int argc, char** argv)
@@ -31,8 +33,7 @@ int main(int argc, char** argv)
 
 	namedWindow("Client");
 		
-	Timer totalTime("Network + Processing");
-	Timer networkTime("Network alone");
+	Timer totalTime("Network + Processing", FRAMES_BETWEEN_TELEMETRY_MESSAGES);
 
 	uchar* current = imageBuffer1;
 	uchar* previous = imageBuffer2;
@@ -42,22 +43,17 @@ int main(int argc, char** argv)
 	while (1)
 	{
 		totalTime.Start(); 
-		networkTime.Start();
 		
-		int numbytes;
+		int numBytes;
 		if (firstRound)
 		{
-			numbytes = client.ReceiveMatrix((char*)current, ROWS, COLS);
+			numBytes = client.ReceiveMatrix((char*)current, ROWS, COLS);
 			firstRound = false;
 		}
 		else
-			numbytes = client.ReceiveCompressed(previous, current, ROWS, COLS);
+			numBytes = client.ReceiveCompressed(previous, current, ROWS, COLS);
 
-		cout << "Received " << numbytes << " Bytes" << endl;
-
-		networkTime.Stop();
-
-		if (numbytes == 0) break;
+		if (numBytes == 0) break;
 
 		Mat image = Mat(ROWS, COLS, CV_8UC1, current);
 		imshow("Client", image);
@@ -68,7 +64,7 @@ int main(int argc, char** argv)
 		previous = current;
 		current = tmp;
 
-		totalTime.Stop();
+		totalTime.Stop(numBytes);
 	}
 
 	client.CloseConnection();

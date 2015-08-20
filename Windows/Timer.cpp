@@ -4,7 +4,7 @@
 #include "Timer.h"
 #include <stdio.h>
 
-Timer::Timer(char* name) : _sampleCounter(0), _accumulated(0), _name(name)
+Timer::Timer(char* name, int windowSize) : _sampleCounter(0), _accumulatedTime(0), _accumulatedBytes(0), _name(name), _windowSize(windowSize)
 {
 	QueryPerformanceFrequency(&_frequency);
 }
@@ -15,16 +15,19 @@ void Timer::Start()
 	_sampleCounter++;
 }
 
-void Timer::Stop()
+void Timer::Stop(int numBytesMoved)
 {
 	QueryPerformanceCounter(&_end);
-	_accumulated += _end.QuadPart - _start.QuadPart;
-
-	if (_sampleCounter == WindowSize)
+	_accumulatedTime += _end.QuadPart - _start.QuadPart;
+	_accumulatedBytes += numBytesMoved;
+	 
+	if (_sampleCounter == _windowSize)
 	{
-		float cycle = _accumulated / WindowSize;
-		printf("%s : Cycle - %2.1f [mSec], Rate - %2.1f [Hz] \n", _name.c_str(), 1000 * cycle / _frequency.QuadPart, _frequency.QuadPart / cycle);
- 		_accumulated = 0;
+		float cycle = (_accumulatedTime / _frequency.QuadPart) / _windowSize;
+		printf("%s : Rate - %2.1f [Hz], Cycle - %2.1f [mSec]\n", _name.c_str(), 1/cycle, 1000 * cycle);
+		printf("%s : Bandwidth - %2.1f [Mbps]\n", _name.c_str(), (_accumulatedBytes / (_accumulatedTime / _frequency.QuadPart))  / (1 << 20));
+ 		_accumulatedTime = 0;
+		_accumulatedBytes = 0;
 		_sampleCounter = 0;
 	}
 }

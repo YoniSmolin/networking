@@ -10,17 +10,18 @@
 class Timer
 {
 public:
-	Timer(char* name);
+	Timer(char* name, int windowSize);
 
 	void Start();
-	void Stop();
+	void Stop(int numBytesMoved);
 
 private:
-	const int WindowSize = 100;
+	int _windowSize = 100;
 	int _sampleCounter;
 	LARGE_INTEGER _start, _end, _frequency;
-	float _accumulated;
-	
+	float _accumulatedTime;
+	int  _accumulatedBytes;
+	 
 	std::string _name;
 };
 
