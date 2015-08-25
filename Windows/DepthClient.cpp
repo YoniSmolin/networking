@@ -13,7 +13,7 @@ using namespace std;
 using namespace cv;
 
 #define PORT "3490"
-#define SERVER_NAME "192.168.137.3"
+#define SERVER_NAME "JetsonBoard1.local"
 
 #define ROWS 424
 #define COLS 512
@@ -68,10 +68,6 @@ int main(int argc, char** argv)
 	}
 
 	client.CloseConnection();
-	cout << "Connection closed" << endl;
-
-	//cout << "Press any key to continue" << endl;
-	//while (!_kbhit());
 
 	return 0;
 }
