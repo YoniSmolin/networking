@@ -16,7 +16,7 @@ public:
 	void Stop(int numBytesMoved);
 
 private:
-	int _windowSize = 100;
+	int _windowSize = 30;
 	int _sampleCounter;
 	LARGE_INTEGER _start, _end, _frequency;
 	float _accumulatedTime;

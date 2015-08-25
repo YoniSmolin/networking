@@ -25,7 +25,7 @@ void Timer::Stop(int numBytesMoved)
 	{
 		float cycle = (_accumulatedTime / _frequency.QuadPart) / _windowSize;
 		printf("%s : Rate - %2.1f [Hz], Cycle - %2.1f [mSec]\n", _name.c_str(), 1/cycle, 1000 * cycle);
-		printf("%s : Bandwidth - %2.1f [Mbps]\n", _name.c_str(), (_accumulatedBytes / (_accumulatedTime / _frequency.QuadPart))  / (1 << 20));
+		printf("%s : Bandwidth - %2.1f [Mbps]\n", _name.c_str(), (_accumulatedBytes*8 / (_accumulatedTime / _frequency.QuadPart))  / (1 << 20));
  		_accumulatedTime = 0;
 		_accumulatedBytes = 0;
 		_sampleCounter = 0;
