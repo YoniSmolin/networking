@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 {
 	uchar imageBuffer1[ROWS*COLS], imageBuffer2[ROWS*COLS];
 	
-	Client client(ROWS, COLS);
+	Client client;
 	cout << "Initialized client successfully" << endl;
 	client.ConnectToServer(SERVER_NAME, PORT);
 	cout << "Connected to server successfully" << endl;

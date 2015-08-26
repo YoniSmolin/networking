@@ -14,7 +14,7 @@ class Client
 	SOCKET _sockfd = INVALID_SOCKET;
 
 public:
-	Client(int rowCound, int colCount);
+	Client();
 
 	int ConnectToServer(const char* serverName, const char* portNumber);
 

@@ -13,7 +13,7 @@
 #define LAST_TWO_LSBS 0x03
 #define FIRST_MSB  0x80
 
-Client::Client(int rowCount, int colCount) : _compressedImageBuffer(NULL) {	}
+Client::Client() : _compressedImageBuffer(NULL) {	}
 
 int Client::ConnectToServer(const char* serverName, const char* portNumber)
 {
