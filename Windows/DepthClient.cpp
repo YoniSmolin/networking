@@ -6,17 +6,17 @@
 #include <conio.h>
 #include <iostream>
 
-#include "Client.h"
-#include "Timer.h"
+#include "Client.h" // networking class
+#include "Timer.h"  // telemetry class
 
 using namespace std;
 using namespace cv;
 
-#define PORT "3490"
-#define SERVER_NAME "JetsonBoard1.local"
+#define PORT "3490" // randomly chosen
+#define SERVER_NAME "JetsonBoard1.local" // JetsonBoardi.local where i stands for the index of the board (written in red on the board itself)
 
-#define ROWS 424
-#define COLS 512
+#define ROWS 424 // depth image 1st dimension
+#define COLS 512 // depth image 2nd dimension
 
 #define FRAMES_BETWEEN_TELEMETRY_MESSAGES 30
 
@@ -24,7 +24,7 @@ using namespace cv;
 
 int main(int argc, char** argv)
 {
-	uchar imageBuffer1[ROWS*COLS], imageBuffer2[ROWS*COLS];
+	uchar imageBuffer1[ROWS*COLS], imageBuffer2[ROWS*COLS]; // we need two buffers because the server sends the compressed difference w.r.t previous frame
 	
 	Client client;
 	cout << "Initialized client successfully" << endl;
