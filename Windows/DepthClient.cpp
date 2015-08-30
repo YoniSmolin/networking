@@ -16,11 +16,10 @@
 
 #pragma region Constructors and Distructors
 
-DepthClient::DepthClient(bool useCompression, int rowCount, int colCount) : _usingCompression(useCompression), _colCount(colCount), _rowCount(rowCount), _expectingFirstFrame(true)
+DepthClient::DepthClient(int rowCount, int colCount) : _colCount(colCount), _rowCount(rowCount), _expectingFirstFrame(true)
 {
 	_currentFrame = new uchar[rowCount * colCount];
-	if (useCompression)
-		_compressedImageBuffer = new char[rowCount * colCount * BYTES_PER_COMPRESSED_PIXEL];
+	_compressedImageBuffer = new char[rowCount * colCount * BYTES_PER_COMPRESSED_PIXEL];
 }
 
 DepthClient::~DepthClient()
@@ -37,7 +36,14 @@ DepthClient::~DepthClient()
 #pragma region send and recieve methods
 
 int DepthClient::ReceiveMatrix()
-{
+{	
+	if (_expectingFirstFrame)
+	{
+		int numBytesReceived = waitUntilReceived((char*)&_usingCompression, sizeof(bool));
+		if (numBytesReceived != sizeof(bool))
+			return 0;
+	}
+	
 	if (_usingCompression)
 		return ReceiveMatrixCompressed();
 	else

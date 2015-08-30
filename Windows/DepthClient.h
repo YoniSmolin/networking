@@ -17,7 +17,7 @@ class DepthClient : public Client
 	bool _usingCompression, _expectingFirstFrame;
 
 public:
-	DepthClient(bool useCompression, int rowCount, int colCount);
+	DepthClient(int rowCount, int colCount);
 
 	int ReceiveMatrix(); // no need to allocate memory for matrix
 	uchar* GetLatestFrame();

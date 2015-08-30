@@ -17,15 +17,13 @@ using namespace cv;
 #define ROWS 424 // depth image 1st dimension
 #define COLS 512 // depth image 2nd dimension
 
-#define COMPRESSION_FLAG true
-
 #define FRAMES_BETWEEN_TELEMETRY_MESSAGES 30
 
 #define MAX_DISTANCE_MM 4500.0f
 
 int main(int argc, char** argv)
 {
-	DepthClient client(COMPRESSION_FLAG, ROWS, COLS);
+	DepthClient client(ROWS, COLS);
 	cout << "Initialized client successfully" << endl;
 	client.ConnectToServer(SERVER_NAME, PORT);
 	cout << "Connected to server successfully" << endl;
