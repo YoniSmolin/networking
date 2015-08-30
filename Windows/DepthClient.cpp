@@ -1,75 +1,106 @@
 /*
-* DepthClient.cpp -- Kinect depth data client
+* DepthClient.cpp -- a TCP client class
 */
 
-#include <opencv2/highgui/highgui.hpp>
-#include <conio.h>
-#include <iostream>
+#include <ws2tcpip.h>
+#include <stdio.h>
+#include <stdexcept> // exceptions
 
-#include "Client.h" // networking class
-#include "Timer.h"  // telemetry class
+#include "DepthClient.h"
 
-using namespace std;
-using namespace cv;
+#define BYTES_PER_COMPRESSED_PIXEL 4
+#define BYTES_IN_HEADER 3
+#define BITS_IN_BYTE 8 
+#define LAST_TWO_LSBS 0x03
+#define FIRST_MSB  0x80
 
-#define PORT "3490" // randomly chosen
-#define SERVER_NAME "JetsonBoard1.local" // JetsonBoardi.local where i stands for the index of the board (written in red on the board itself)
+#pragma region Constructors and Distructors
 
-#define ROWS 424 // depth image 1st dimension
-#define COLS 512 // depth image 2nd dimension
-
-#define FRAMES_BETWEEN_TELEMETRY_MESSAGES 30
-
-#define MAX_DISTANCE_MM 4500.0f
-
-int main(int argc, char** argv)
+DepthClient::DepthClient(bool useCompression, int rowCount, int colCount) : _usingCompression(useCompression), _colCount(colCount), _rowCount(rowCount), _expectingFirstFrame(true)
 {
-	uchar imageBuffer1[ROWS*COLS], imageBuffer2[ROWS*COLS]; // we need two buffers because the server sends the compressed difference w.r.t previous frame
-	
-	Client client;
-	cout << "Initialized client successfully" << endl;
-	client.ConnectToServer(SERVER_NAME, PORT);
-	cout << "Connected to server successfully" << endl;
-
-	namedWindow("Client");
-		
-	Timer totalTime("Network + Processing", FRAMES_BETWEEN_TELEMETRY_MESSAGES);
-
-	uchar* current = imageBuffer1;
-	uchar* previous = imageBuffer2;
-
-	bool firstRound = true;
-
-	while (1)
-	{
-		totalTime.Start(); 
-		
-		int numBytes;
-		if (firstRound)
-		{
-			numBytes = client.ReceiveMatrix((char*)current, ROWS, COLS);
-			firstRound = false;
-		}
-		else
-			numBytes = client.ReceiveCompressed(previous, current, ROWS, COLS);
-
-		if (numBytes == 0) break;
-
-		Mat image = Mat(ROWS, COLS, CV_8UC1, current);
-		imshow("Client", image);
-		waitKey(1);
-
-		// swap the buffers
-		uchar* tmp = previous;
-		previous = current;
-		current = tmp;
-
-		totalTime.Stop(numBytes);
-	}
-
-	client.CloseConnection();
-
-	return 0;
+	_currentFrame = new uchar[rowCount * colCount];
+	if (useCompression)
+		_compressedImageBuffer = new char[rowCount * colCount * BYTES_PER_COMPRESSED_PIXEL];
 }
 
+DepthClient::~DepthClient()
+{
+	if (_usingCompression)
+	{
+		delete[] _compressedImageBuffer;
+		delete[] _currentFrame;
+	}
+}
+
+#pragma endregion
+
+#pragma region send and recieve methods
+
+int DepthClient::ReceiveMatrix()
+{
+	if (_usingCompression)
+		return ReceiveMatrixCompressed();
+	else
+		return waitUntilReceived((char*)_currentFrame, _rowCount * _colCount);
+}
+
+int DepthClient::ReceiveMatrixCompressed()
+{
+	int numBytesRecieved = 0;
+
+	if (_expectingFirstFrame)
+	{
+		numBytesRecieved = waitUntilReceived((char*)_currentFrame, _rowCount * _colCount); // first packet is delivered without compression...
+		_expectingFirstFrame = false;
+	}
+	else
+	{
+		uchar header[BYTES_IN_HEADER];
+		int totalReceived = waitUntilReceived((char*)header, BYTES_IN_HEADER);
+		if (totalReceived < BYTES_IN_HEADER) // totalReceived will be less than BYTES_IN_HEADER only if server has closed connection
+			return 0;
+
+		// reconstruct the length of the compressed image from the header
+		int compressedLength = header[0];
+		compressedLength += header[1] << BITS_IN_BYTE;
+		compressedLength += header[2] << 2 * BITS_IN_BYTE;
+
+		// reconstruct the image itself
+		totalReceived = waitUntilReceived(_compressedImageBuffer, compressedLength);
+		if (totalReceived < compressedLength) // totalReceived will be less than BYTES_IN_HEASER only if server has closed connection
+			return 0;
+
+		int indexCompressed = 0;
+		int shift = 0;
+		while (indexCompressed < compressedLength)
+		{
+			uchar firstByte = (uchar)_compressedImageBuffer[indexCompressed++];
+			uchar secondByte = (uchar)_compressedImageBuffer[indexCompressed++];
+			uchar thirdByte = (uchar)_compressedImageBuffer[indexCompressed++];
+			int fourthByte = _compressedImageBuffer[indexCompressed++]; // fourth byte is signed
+
+			int imageIndex = firstByte + (secondByte << BITS_IN_BYTE) + ((thirdByte & LAST_TWO_LSBS) << BITS_IN_BYTE * 2);
+			bool isNegative = (thirdByte & FIRST_MSB) == FIRST_MSB; // meaning - the MSB is '1'
+			if (isNegative)
+				_currentFrame[imageIndex] -= fourthByte;
+			else
+				_currentFrame[imageIndex] += fourthByte;
+		}
+
+		numBytesRecieved = compressedLength + BYTES_IN_HEADER;
+	}
+
+	return numBytesRecieved;
+}
+
+#pragma endregion
+
+#pragma region setters and getters
+
+uchar* DepthClient::GetLatestFrame()
+{
+	return _currentFrame;
+}
+
+#pragma endregion
 

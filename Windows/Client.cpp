@@ -4,16 +4,20 @@
 
 #include <ws2tcpip.h>
 #include <stdio.h>
+#include <stdexcept> // exceptions
 
 #include "Client.h"
 
-#define BYTES_PER_COMPRESSED_PIXEL 4
-#define BYTES_IN_HEADER 3
-#define BITS_IN_BYTE 8 
-#define LAST_TWO_LSBS 0x03
-#define FIRST_MSB  0x80
+#pragma region Constructors and Distructors
 
-Client::Client() : _compressedImageBuffer(NULL) {	}
+Client::~Client() 
+{
+	CloseConnection();
+}
+
+#pragma endregion
+
+#pragma region open and close connection methods
 
 int Client::ConnectToServer(const char* serverName, const char* portNumber)
 {
@@ -22,15 +26,15 @@ int Client::ConnectToServer(const char* serverName, const char* portNumber)
 	int iResult;
 
 	// Initialize Winsock
-	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData); 
+	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0) {
 		printf("WSAStartup failed: %d\n", iResult);
 		return 1;
 	}
 
 	struct addrinfo *result = NULL,
-					*ptr = NULL,
-					hints;
+		*ptr = NULL,
+		hints;
 
 	ZeroMemory(&hints, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
@@ -92,6 +96,17 @@ int Client::ConnectToServer(const char* serverName, const char* portNumber)
 	return 0;
 }
 
+void Client::CloseConnection()
+{
+	// cleanup
+	closesocket(_sockfd);
+	WSACleanup();
+}
+
+#pragma endregion
+
+#pragma region send and recieve methods
+
 int Client::ReceiveMessage(char* message, int length)
 {
 	int numBytes;
@@ -103,61 +118,6 @@ int Client::ReceiveMessage(char* message, int length)
 	return numBytes;
 }
 
-int Client::ReceiveMatrix(char* matrix, int rowCount, int colCount)
-{
-	int expectedBytes = rowCount * colCount;
-	int totalReceived = waitUntilReceived(matrix, expectedBytes);
-
-	return totalReceived;
-}
-
-int Client::ReceiveMatrix(float* matrix, int rowCount, int colCount)
-{
-	if (sizeof(float) != 4)
-		throw "Server::ReceiveMatrix - size of float on this machine must be 32 bits\n";
-
-	return ReceiveMatrix((char*)matrix, rowCount, sizeof(float)*colCount);
-}
-
-int Client::ReceiveCompressed(const uchar* reference, uchar* received, int rowCount, int colCount)
-{
-	if (_compressedImageBuffer == NULL)
-		_compressedImageBuffer = new char[rowCount * colCount * BYTES_PER_COMPRESSED_PIXEL];
-
-	// initialize received
-	memcpy(received, reference, colCount * rowCount);
-
-	uchar header[BYTES_IN_HEADER];
-	int totalReceived = waitUntilReceived((char*)header, BYTES_IN_HEADER);
-	if (totalReceived < BYTES_IN_HEADER) // totalReceived will be less than BYTES_IN_HEASER only if server has closed connection
-		return 0;
-
-	// reconstruct the length of the compressed image from the header
-	int compressedLength = header[0];
-	compressedLength +=    header[1] << BITS_IN_BYTE;
-	compressedLength += header[2] << 2 * BITS_IN_BYTE;
-
-	// reconstruct the image itself
-	totalReceived = waitUntilReceived(_compressedImageBuffer, compressedLength);
-	if (totalReceived < compressedLength) // totalReceived will be less than BYTES_IN_HEASER only if server has closed connection
-		return 0;
-
-	int indexCompressed = 0;
-	int shift = 0;
-	while (indexCompressed < compressedLength)
-	{
-		uchar firstByte = (uchar)_compressedImageBuffer[indexCompressed++];
-		uchar secondByte = (uchar)_compressedImageBuffer[indexCompressed++];
-		uchar thirdByte = (uchar)_compressedImageBuffer[indexCompressed++];
-		char fourthByte = _compressedImageBuffer[indexCompressed++]; // fourth byte is signed
-
-		int imageIndex = firstByte + (secondByte << BITS_IN_BYTE) + ((thirdByte & LAST_TWO_LSBS) << BITS_IN_BYTE *2); 
-		received[imageIndex] += (((int)fourthByte) << 1) + ((thirdByte & FIRST_MSB) >> (BITS_IN_BYTE - 1)); // the casts in this line are very important - think them through when reading
-	}
-
-	return compressedLength + BYTES_IN_HEADER;
-}
-
 int Client::waitUntilReceived(char* buffer, int length)
 {
 	int totalReceived = 0;
@@ -165,7 +125,7 @@ int Client::waitUntilReceived(char* buffer, int length)
 	while (totalReceived < length)
 	{
 		int received = ReceiveMessage(buffer + totalReceived, length - totalReceived);
-		if (received  == 0)
+		if (received == 0)
 		{
 			printf("Server closed connection");
 			break;
@@ -176,15 +136,4 @@ int Client::waitUntilReceived(char* buffer, int length)
 	return totalReceived;
 }
 
-void Client::CloseConnection()
-{
-	// cleanup
-	closesocket(_sockfd);
-	WSACleanup();
-}
-
-Client::~Client()
-{
-	if (_compressedImageBuffer != NULL)
-		delete[] _compressedImageBuffer;
-}
+#pragma endregion
