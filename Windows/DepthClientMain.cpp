@@ -53,6 +53,8 @@ int main(int argc, char** argv)
 
 	client.CloseConnection();
 
+	printf("Average bandwidth for this session was: %2.1f [Mbps]\n", telemetry.AverageBandwidth());
+
 	return 0;
 }
 

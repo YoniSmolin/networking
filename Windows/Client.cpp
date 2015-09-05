@@ -127,7 +127,7 @@ int Client::waitUntilReceived(char* buffer, int length)
 		int received = ReceiveMessage(buffer + totalReceived, length - totalReceived);
 		if (received == 0)
 		{
-			printf("Server closed connection");
+			printf("Server closed connection\n");
 			break;
 		}
 		totalReceived += received;
