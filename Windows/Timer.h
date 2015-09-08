@@ -7,10 +7,12 @@
 #include <windows.h>
 #include <string>
 
+using namespace std;
+
 class Timer
 {
 public:
-	Timer(char* name, int windowSize);
+	Timer(string name, int windowSize);
 
 	void  Start();
 	void  Stop(int numBytesMoved);
@@ -25,7 +27,7 @@ private:
 	float _sessionBandwidthSum;
 	int  _accumulatedBytes;
 	 
-	std::string _name;
+	string _name;
 };
 
 #endif

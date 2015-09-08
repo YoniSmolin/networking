@@ -28,7 +28,7 @@ int Client::ConnectToServer(const char* serverName, const char* portNumber)
 	// Initialize Winsock
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0) {
-		printf("WSAStartup failed: %d\n", iResult);
+		printf("Client #%s - WSAStartup failed: %d\n", _name.c_str(), iResult);
 		return 1;
 	}
 
@@ -44,7 +44,7 @@ int Client::ConnectToServer(const char* serverName, const char* portNumber)
 	// Resolve the server address and port
 	iResult = getaddrinfo(serverName, portNumber, &hints, &result);
 	if (iResult != 0) {
-		printf("getaddrinfo failed: %d\n", iResult);
+		printf("Client #%s - getaddrinfo failed: %d\n", _name.c_str(), iResult);
 		WSACleanup();
 		return 1;
 	}
@@ -57,7 +57,7 @@ int Client::ConnectToServer(const char* serverName, const char* portNumber)
 	_sockfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 
 	if (_sockfd == INVALID_SOCKET) {
-		printf("Error at socket(): %ld\n", WSAGetLastError());
+		printf("Client #%s - Error at socket(): %ld\n", _name.c_str(), WSAGetLastError());
 		freeaddrinfo(result);
 		WSACleanup();
 		return 1;
@@ -78,7 +78,7 @@ int Client::ConnectToServer(const char* serverName, const char* portNumber)
 	freeaddrinfo(result);
 
 	if (_sockfd == INVALID_SOCKET) {
-		printf("Unable to connect to server!\n");
+		printf("Client #%s - Unable to connect to server!\n", _name.c_str());
 		WSACleanup();
 		return 1;
 	}
@@ -87,7 +87,7 @@ int Client::ConnectToServer(const char* serverName, const char* portNumber)
 	// the client can still use the ConnectSocket for receiving data
 	iResult = shutdown(_sockfd, SD_SEND);
 	if (iResult == SOCKET_ERROR) {
-		printf("shutdown failed: %d\n", WSAGetLastError());
+		printf("Client #%s - shutdown failed: %d\n", _name.c_str(), WSAGetLastError());
 		closesocket(_sockfd);
 		WSACleanup();
 		return 1;
@@ -113,7 +113,7 @@ int Client::ReceiveMessage(char* message, int length)
 
 	numBytes = recv(_sockfd, message, length, 0);
 	if (numBytes < 0)
-		printf("recv failed: %d\n", WSAGetLastError());
+		printf("Client #%s - recv failed: %d\n", _name.c_str(), WSAGetLastError());
 
 	return numBytes;
 }
@@ -127,7 +127,7 @@ int Client::waitUntilReceived(char* buffer, int length)
 		int received = ReceiveMessage(buffer + totalReceived, length - totalReceived);
 		if (received == 0)
 		{
-			printf("Server closed connection\n");
+			printf("Client #%s - Server closed connection\n", _name.c_str());
 			break;
 		}
 		totalReceived += received;

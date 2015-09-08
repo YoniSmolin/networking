@@ -16,7 +16,7 @@
 
 #pragma region Constructors and Distructors
 
-DepthClient::DepthClient(int rowCount, int colCount) : _colCount(colCount), _rowCount(rowCount), _expectingFirstFrame(true)
+DepthClient::DepthClient(string name, int rowCount, int colCount) : Client(name), _colCount(colCount), _rowCount(rowCount), _expectingFirstFrame(true)
 {
 	_currentFrame = new uchar[rowCount * colCount];
 	_compressedImageBuffer = new char[rowCount * colCount * BYTES_PER_COMPRESSED_PIXEL];
