@@ -29,6 +29,7 @@ using namespace cv;
 #define THREAD_BARRIER_SPIN_COUNT -1 // the number of times a thread will attempt to check the barrier state before it blocks (-1 corresponds to a system defalut value of 2k)
 
 LPSYNCHRONIZATION_BARRIER barrier; // a GLOBAL thread barrier
+bool FastestThreadFinished = false;
 
 unsigned __stdcall KinectClientThreadFunction(void* kinectIndex);
 
@@ -43,7 +44,8 @@ int main(int argc, char** argv)
 		int threadCount = atoi(argv[1]);
 	#pragma endregion
 
-	#pragma region initialize synchronziation barrier		
+	#pragma region initialize synchronziation barrier	
+		barrier = (LPSYNCHRONIZATION_BARRIER) malloc(sizeof(SYNCHRONIZATION_BARRIER));
 		BOOL result = InitializeSynchronizationBarrier(barrier, threadCount, -1);
 		if (result != TRUE)
 		{
@@ -58,7 +60,7 @@ int main(int argc, char** argv)
 
 		for (int i = 0; i < threadCount; i++)
 		{
-			threadIndices[i] = i;
+			threadIndices[i] = i+1; // I don't like to enumerate stuff from 0
 			handlesToThreads[i] = (HANDLE)_beginthreadex(NULL, 0, &KinectClientThreadFunction, &threadIndices[i], CREATE_SUSPENDED, NULL);
 		}
 
@@ -79,20 +81,21 @@ int main(int argc, char** argv)
 
 unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 {
-	char clientIndex; 
+	int index = *((int*)kinectIndex);
+	char clientIndex[3]; 
 
-	_itoa_s(*((int*)kinectIndex), &clientIndex, sizeof(clientIndex), 10); // 10 is the radix
+	_itoa_s(index, clientIndex, 3, 10); // 10 is the radix
 
-	DepthClient client(string(&clientIndex), ROWS, COLS);
+	DepthClient client(string(clientIndex), ROWS, COLS);
 	cout << "Initialized client #" << clientIndex << " successfully" << endl;
-	string serverName = string(SERVER_NAME_HEADER) + string(&clientIndex) + string(SERVER_NAME_TAIL);
-	client.ConnectToServer(serverName.c_str(), PORT);
+	string serverName = string(SERVER_NAME_HEADER) + string(clientIndex) + string(SERVER_NAME_TAIL);
+	client.ConnectToServer(index == 1 ? "132.68.63.164":"132.68.56.152", PORT);    //serverName.c_str(), PORT); // 
 	cout << "Connected to server #" << clientIndex << " successfully" << endl;
 
-	string windowName = string("Client #") + string(&clientIndex);
+	string windowName = string("Client #") + string(clientIndex);
 	namedWindow(windowName); // OpenCV windows
 
-	Timer telemetry(string("Kinect #") + string(&clientIndex), FRAMES_BETWEEN_TELEMETRY_MESSAGES);
+	Timer telemetry(string("Kinect #") + string(clientIndex), FRAMES_BETWEEN_TELEMETRY_MESSAGES);
 
 	uchar* receivedImageData = NULL;
 	int numBytes = 0;
@@ -104,20 +107,26 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 		numBytes = client.ReceiveMatrix(); // after it is received the matrix is stored internally in the client
 		receivedImageData = client.GetLatestFrame(); // to obtain the received matrix...
 
-		if (numBytes == 0) break; // Server finished delivering data
+		if (numBytes == 0) FastestThreadFinished = true;
 
-		Mat image = Mat(ROWS, COLS, CV_8UC1, receivedImageData);
-		imshow(windowName, image);
-		waitKey(1);
+		if (numBytes > 0)
+		{
+			Mat image = Mat(ROWS, COLS, CV_8UC1, receivedImageData);
+			imshow(windowName, image);
+			waitKey(1);
 
-		telemetry.Stop(numBytes);
+			telemetry.Stop(numBytes);
+		}
 
 		EnterSynchronizationBarrier(barrier, 0); // 0 means no flags
+
+		if (FastestThreadFinished)
+			break;
 	}
 
 	client.CloseConnection();
 
-	printf("Average bandwidth for Kinect #%c was: %2.1f [Mbps]\n", clientIndex, telemetry.AverageBandwidth());
+	printf("Average bandwidth for Kinect #%s was: %2.1f [Mbps]\n", clientIndex, telemetry.AverageBandwidth());
 
 	return 0;
 }
