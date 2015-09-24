@@ -6,8 +6,10 @@
 #define DEPTHCLIENT_H
 
 #include "Client.h"
+#include <opencv2/highgui/highgui.hpp> // decoding the PNG image
 
 using namespace std;
+using namespace cv;
 
 typedef unsigned char uchar;
 
@@ -16,18 +18,22 @@ class DepthClient : public Client
 	int _rowCount, _colCount;
 	char* _compressedImageBuffer;
 	uchar* _currentFrame;
-	bool _usingCompression, _expectingFirstFrame;
+	Mat _currentFrameMat;
+	bool _expectingFirstFrame;
+	char _compressionType;
 
 public:
 	DepthClient(string name, int rowCount, int colCount);
 
 	int ReceiveMatrix(); // no need to allocate memory for matrix
-	uchar* GetLatestFrame();
-		
+	const uchar* GetLatestFrame();
+	const Mat DepthClient::GetLatestFrameMat();
+
 	~DepthClient();
 
 private:
-	int ReceiveMatrixCompressed();
+	int ReceiveMatrixCompressedWithDelta();
+	int ReceiveMatrixCompressedWithPNG();
 	string _name;
 };
 

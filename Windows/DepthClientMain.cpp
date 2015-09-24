@@ -89,7 +89,7 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 	DepthClient client(string(clientIndex), ROWS, COLS);
 	cout << "Initialized client #" << clientIndex << " successfully" << endl;
 	string serverName = string(SERVER_NAME_HEADER) + string(clientIndex) + string(SERVER_NAME_TAIL);
-	client.ConnectToServer(index == 1 ? "132.68.63.164":"132.68.56.152", PORT);    //serverName.c_str(), PORT); // 
+	client.ConnectToServer(index == 1 ? "132.68.56.9":"132.68.56.79", PORT);    //serverName.c_str(), PORT); // 
 	cout << "Connected to server #" << clientIndex << " successfully" << endl;
 
 	string windowName = string("Client #") + string(clientIndex);
@@ -97,7 +97,7 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 
 	Timer telemetry(string("Kinect #") + string(clientIndex), FRAMES_BETWEEN_TELEMETRY_MESSAGES);
 
-	uchar* receivedImageData = NULL;
+	//const uchar* receivedImageData = NULL;
 	int numBytes = 0;
 
 	while (1)
@@ -105,14 +105,14 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 		telemetry.Start();
 
 		numBytes = client.ReceiveMatrix(); // after it is received the matrix is stored internally in the client
-		receivedImageData = client.GetLatestFrame(); // to obtain the received matrix...
+		//receivedImageData = client.GetLatestFrame(); // to obtain the received matrix...
 
 		if (numBytes == 0) FastestThreadFinished = true;
 
 		if (numBytes > 0)
 		{
-			Mat image = Mat(ROWS, COLS, CV_8UC1, receivedImageData);
-			imshow(windowName, image);
+			//Mat image = Mat(ROWS, COLS, CV_8UC1, const_cast<uchar*>(receivedImageData));
+			imshow(windowName, client.GetLatestFrameMat());//image);
 			waitKey(1);
 
 			telemetry.Stop(numBytes);
