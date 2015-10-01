@@ -89,7 +89,7 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 	DepthClient client(string(clientIndex), ROWS, COLS);
 	cout << "Initialized client #" << clientIndex << " successfully" << endl;
 	string serverName = string(SERVER_NAME_HEADER) + string(clientIndex) + string(SERVER_NAME_TAIL);
-	client.ConnectToServer(index == 1 ? "132.68.56.9":"132.68.56.79", PORT);    //serverName.c_str(), PORT); // 
+	client.ConnectToServer(index == 1 ? "132.68.56.9":"132.68.49.41", PORT);    //serverName.c_str(), PORT); // 
 	cout << "Connected to server #" << clientIndex << " successfully" << endl;
 
 	string windowName = string("Client #") + string(clientIndex);
@@ -98,6 +98,7 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 	Timer telemetry(string("Kinect #") + string(clientIndex), FRAMES_BETWEEN_TELEMETRY_MESSAGES);
 
 	int numBytes = 0;
+	int frameNumber = 1;
 
 	while (1)
 	{
@@ -109,7 +110,9 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 			FastestThreadFinished = true;
 		else if (numBytes > 0)
 		{
-			imshow(windowName, client.GetLatestFrameMat());
+			Mat lastFrame = client.GetLatestFrameMat();
+			imshow(windowName, lastFrame);
+			imwrite(string("Clips/") + string(clientIndex) + string("/") + to_string(frameNumber++) + string(".png"), lastFrame);
 			waitKey(1);
 
 			telemetry.Stop(numBytes);
