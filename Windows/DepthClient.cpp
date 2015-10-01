@@ -59,6 +59,8 @@ int DepthClient::ReceiveMatrix()
 	case PNG_COMPRESSION:   return ReceiveMatrixCompressedWithPNG();
 	default:				throw exception("A bad compression type was received");
 	}
+
+	_expectingFirstFrame = false;
 }
 
 int DepthClient::ReceiveMatrixCompressedWithDelta()
@@ -66,10 +68,7 @@ int DepthClient::ReceiveMatrixCompressedWithDelta()
 	int numBytesRecieved = 0;
 
 	if (_expectingFirstFrame)
-	{
 		numBytesRecieved = waitUntilReceived((char*)_currentFrame, _rowCount * _colCount); // first packet is delivered without compression...
-		_expectingFirstFrame = false;
-	}
 	else
 	{
 		uchar header[BYTES_IN_HEADER];
@@ -130,8 +129,6 @@ int DepthClient::ReceiveMatrixCompressedWithPNG()
 		vector<uchar> receivedPNG(_compressedImageBuffer, _compressedImageBuffer + compressedLength);
 		_currentFrameMat = Mat(_rowCount, _colCount, CV_8UC1, _currentFrame); 
 		imdecode(receivedPNG, CV_LOAD_IMAGE_ANYDEPTH, &_currentFrameMat); // how does openCV know that receivedPNG contains a compressed PNG image ? by its content.
-
-		_expectingFirstFrame = false;
 
 		return compressedLength + BYTES_IN_HEADER;
 }

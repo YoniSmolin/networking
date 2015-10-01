@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 	#pragma region process input arguments
 		if (argc > 2)
 		{
-			cout << "usage: " << argv[0] << " -n" << endl << "(n stands for the number of clients to launch)" << endl;
+			cout << "usage: " << argv[0] << " n" << endl << "(n stands for the number of clients to launch)" << endl;
 			return 1;
 		}
 		int threadCount = atoi(argv[1]);
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 	#pragma endregion
 
 	#pragma region launch threads
-		HANDLE* handlesToThreads = new HANDLE[threadCount];//(HANDLE*) malloc(sizeof(HANDLE) * threadCount);
+		HANDLE* handlesToThreads = new HANDLE[threadCount];
 		int* threadIndices = new int[threadCount];
 
 		for (int i = 0; i < threadCount; i++)
@@ -97,7 +97,6 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 
 	Timer telemetry(string("Kinect #") + string(clientIndex), FRAMES_BETWEEN_TELEMETRY_MESSAGES);
 
-	//const uchar* receivedImageData = NULL;
 	int numBytes = 0;
 
 	while (1)
@@ -105,14 +104,12 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 		telemetry.Start();
 
 		numBytes = client.ReceiveMatrix(); // after it is received the matrix is stored internally in the client
-		//receivedImageData = client.GetLatestFrame(); // to obtain the received matrix...
-
-		if (numBytes == 0) FastestThreadFinished = true;
-
-		if (numBytes > 0)
+		
+		if (numBytes == 0) 
+			FastestThreadFinished = true;
+		else if (numBytes > 0)
 		{
-			//Mat image = Mat(ROWS, COLS, CV_8UC1, const_cast<uchar*>(receivedImageData));
-			imshow(windowName, client.GetLatestFrameMat());//image);
+			imshow(windowName, client.GetLatestFrameMat());
 			waitKey(1);
 
 			telemetry.Stop(numBytes);
