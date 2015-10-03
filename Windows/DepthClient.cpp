@@ -106,8 +106,6 @@ int DepthClient::ReceiveMatrixCompressedWithDelta()
 		numBytesRecieved = compressedLength + BYTES_IN_HEADER;
 	}
 
-	_currentFrameMat = Mat(_rowCount, _colCount, CV_8UC1, _currentFrame);
-
 	return numBytesRecieved;
 }
 
@@ -129,8 +127,8 @@ int DepthClient::ReceiveMatrixCompressedWithPNG()
 			return 0;
 		
 		vector<uchar> receivedPNG(_compressedImageBuffer, _compressedImageBuffer + compressedLength);
-		_currentFrameMat = Mat(_rowCount, _colCount, CV_8UC1, _currentFrame); 
-		imdecode(receivedPNG, CV_LOAD_IMAGE_ANYDEPTH, &_currentFrameMat); // how does openCV know that receivedPNG contains a compressed PNG image ? by its content.
+		Mat currentFrameMat = Mat(_rowCount, _colCount, CV_8UC1, _currentFrame); 
+		imdecode(receivedPNG, CV_LOAD_IMAGE_ANYDEPTH, &currentFrameMat); // how does openCV know that receivedPNG contains a compressed PNG image ? by its content.
 
 		return compressedLength + BYTES_IN_HEADER;
 }
@@ -146,7 +144,7 @@ const uchar* DepthClient::GetLatestFrame()
 
 const Mat DepthClient::GetLatestFrameMat()
 {
-	return _currentFrameMat;
+	return Mat(_rowCount, _colCount, CV_8UC1, _currentFrame);
 }
 #pragma endregion
 

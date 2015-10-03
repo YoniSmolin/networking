@@ -18,7 +18,6 @@ class DepthClient : public Client
 	int _rowCount, _colCount;
 	char* _compressedImageBuffer;
 	uchar* _currentFrame;
-	Mat _currentFrameMat;
 	bool _expectingFirstFrame;
 	char _compressionType;
 
