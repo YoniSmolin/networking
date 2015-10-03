@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 	
 		if (argc > 3 || argc < 2)
 		{
-			cout << "usage: " << argv[0] << " n [-s]" << endl
+			cout << "usage: " << argv[0] << " n [-r]" << endl
 				<< "n - a mandatory parameter, specifies the number of clients to launch" << endl
 				<< "[-r] - an optinal flag that turns on recording" << endl;
 			return 1;
@@ -139,6 +139,11 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 
 		while (1)
 		{
+			EnterSynchronizationBarrier(barrier, 0); // threads wlil block here until all the threads reach here [0 means no flags]
+
+			if (FastestThreadFinished) // as soon as one thread is done, everybody's closing their basta
+				break;
+
 			telemetry.Start();
 
 			int numBytes = client.ReceiveMatrix(); // after it is received the matrix is stored internally in the client object
@@ -159,12 +164,7 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 				}
 
 				telemetry.Stop(numBytes);
-			}
-
-			EnterSynchronizationBarrier(barrier, 0); // threads wlil block here until all the threads reach here [0 means no flags]
-
-			if (FastestThreadFinished) // as soon as one thread is done, everybody's closing their basta
-				break;
+			}			
 		}
 
 	#pragma endregion

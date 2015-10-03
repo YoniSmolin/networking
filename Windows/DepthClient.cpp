@@ -106,6 +106,8 @@ int DepthClient::ReceiveMatrixCompressedWithDelta()
 		numBytesRecieved = compressedLength + BYTES_IN_HEADER;
 	}
 
+	_currentFrameMat = Mat(_rowCount, _colCount, CV_8UC1, _currentFrame);
+
 	return numBytesRecieved;
 }
 
