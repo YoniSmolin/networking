@@ -18,21 +18,17 @@ class DepthClient : public Client
 	int _rowCount, _colCount;
 	char* _compressedImageBuffer;
 	uchar* _currentFrame;
-	bool _expectingFirstFrame;
-	char _compressionType;
 
 public:
 	DepthClient(string name, int rowCount, int colCount);
 
-	int ReceiveMatrix(); // no need to allocate external memory for the output matrix - the output is written to a class member
+	int ReceiveMatrixCompressedWithPNG(); // no need to allocate external memory for the output matrix - the output is written to a class member
 	const uchar* GetLatestFrame();
 	const Mat DepthClient::GetLatestFrameMat();
 
 	~DepthClient();
 
 private:
-	int ReceiveMatrixCompressedWithDelta();
-	int ReceiveMatrixCompressedWithPNG();
 	string _name;
 };
 

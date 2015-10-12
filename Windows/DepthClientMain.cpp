@@ -22,6 +22,10 @@ using namespace cv;
 #define ROWS 424 // depth image 1st dimension - # of rows
 #define COLS 512 // depth image 2nd dimension - # of columns
 
+#define DEPTH_MIN 500.0f // [mm]
+#define DEPTH_MAX 4000.0f // [mm]
+#define DEPTH_RESOLUTION 2.5f // [mm]
+
 #define RECORDING_DIRECTORY "Recordings/" // name of parent directory where the recordings from different Kinects will be stored
 
 #define FRAMES_BETWEEN_TELEMETRY_MESSAGES 30 // every so many frames, the average FPS and BW will be printed to the command window
@@ -146,7 +150,7 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 
 			telemetry.Start();
 
-			int numBytes = client.ReceiveMatrix(); // after it is received the matrix is stored internally in the client object
+			int numBytes = client.ReceiveMatrixCompressedWithPNG(); // after it is received the matrix is stored internally in the client object
 		
 			if (numBytes == 0)
 			{
@@ -154,7 +158,7 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 			}
 			else if (numBytes > 0)
 			{
-				Mat lastFrame = client.GetLatestFrameMat();
+				Mat lastFrame = ((1 << 16) / ( (DEPTH_MAX - DEPTH_MIN) / DEPTH_RESOLUTION ) ) * client.GetLatestFrameMat();
 				imshow(windowName, lastFrame);
 				waitKey(1);
 
