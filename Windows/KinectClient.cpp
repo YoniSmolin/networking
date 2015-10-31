@@ -1,5 +1,5 @@
 /*
-* DepthClient.cpp -- a TCP client class
+* KinectClient.cpp -- a TCP client class
 */
 
 #include <ws2tcpip.h>
@@ -7,7 +7,7 @@
 #include <stdexcept> // exceptions
 #include <vector>    // for the received PNG
 
-#include "DepthClient.h"
+#include "KinectClient.h"
 
 #define BYTES_PER_COMPRESSED_PIXEL 2
 #define BYTES_IN_HEADER 3
@@ -23,13 +23,13 @@ using namespace cv;
 
 #pragma region Constructors and Distructors
 
-DepthClient::DepthClient(string name, int rowCount, int colCount) : Client(name), _colCount(colCount), _rowCount(rowCount)
+KinectClient::KinectClient(string name, int rowCount, int colCount) : Client(name), _colCount(colCount), _rowCount(rowCount)
 {
 	_currentFrame = new uchar[rowCount * colCount * 2];
 	_compressedImageBuffer = new char[rowCount * colCount * BYTES_PER_COMPRESSED_PIXEL];
 }
 
-DepthClient::~DepthClient()
+KinectClient::~KinectClient()
 {
 		delete[] _compressedImageBuffer;
 		delete[] _currentFrame;
@@ -39,7 +39,7 @@ DepthClient::~DepthClient()
 
 #pragma region send and recieve methods
 
-int DepthClient::ReceiveMatrixCompressedWithPNG()
+int KinectClient::ReceiveMatrixCompressedWithPNG()
 {
 		uchar header[BYTES_IN_HEADER];
 		int totalReceived = waitUntilReceived((char*)header, BYTES_IN_HEADER);
@@ -67,12 +67,12 @@ int DepthClient::ReceiveMatrixCompressedWithPNG()
 
 #pragma region setters and getters
 
-const uchar* DepthClient::GetLatestFrame()
+const uchar* KinectClient::GetLatestFrame()
 {
 	return _currentFrame;
 }
 
-const Mat DepthClient::GetLatestFrameMat()
+const Mat KinectClient::GetLatestFrameMat()
 {
 	return Mat(_rowCount, _colCount, CV_16UC1, _currentFrame);
 }

@@ -1,11 +1,11 @@
 /*
-* DepthClient.cpp -- Kinect depth data client
+* KinectClient.cpp -- Kinect depth data client
 */
 
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 
-#include "DepthClient.h" // networking class
+#include "KinectClient.h" // networking class
 #include "Timer.h"  // telemetry class
 
 #include <windows.h>  // multithreading
@@ -24,7 +24,7 @@ using namespace cv;
 
 #define DEPTH_MIN 500.0f // [mm]
 #define DEPTH_MAX 4000.0f // [mm]
-#define DEPTH_RESOLUTION 2.5f // [mm]
+#define DEPTH_RESOLUTION 2.f // [mm]
 
 #define RECORDING_DIRECTORY "Recordings/" // name of parent directory where the recordings from different Kinects will be stored
 
@@ -113,7 +113,7 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 
 		_itoa_s(index, clientIndex, 3, 10); // 10 is the radix
 
-		DepthClient client(string(clientIndex), ROWS, COLS);
+		KinectClient client(string(clientIndex), ROWS, COLS);
 		cout << "Initialized client #" << clientIndex << " successfully" << endl; // not sure this printing is thread sage
 	
 	#pragma endregion
@@ -164,7 +164,7 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 
 				if (Recording)
 				{					
-					imwrite(recordingDir + string("/") + to_string(frameNumber++) + string(".png"), lastFrame);
+					imwrite(recordingDir + string("/") + to_string(frameNumber++) + string(".png"), DEPTH_MIN + client.GetLatestFrameMat() * DEPTH_RESOLUTION); // saving the correct depth values
 				}
 
 				telemetry.Stop(numBytes);
