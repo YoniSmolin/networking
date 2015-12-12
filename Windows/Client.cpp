@@ -53,27 +53,27 @@ int Client::ConnectToServer(const char* serverName, const char* portNumber)
 	// the call to getaddrinfo
 	ptr = result;
 
-	// Create a SOCKET for connecting to server
-	_sockfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+	while (ptr != NULL)
+	{
+		// Create a SOCKET for connecting to server
+		_sockfd = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 
-	if (_sockfd == INVALID_SOCKET) {
-		printf("Client #%s - Error at socket(): %ld\n", _name.c_str(), WSAGetLastError());
-		freeaddrinfo(result);
-		WSACleanup();
-		return 1;
-	}
+		if (_sockfd == INVALID_SOCKET) {
+			printf("Client #%s - Error at socket(): %ld\n", _name.c_str(), WSAGetLastError());
+			freeaddrinfo(result);
+			WSACleanup();
+			return 1;
+		}
 
-	// Connect to server.
-	iResult = connect(_sockfd, ptr->ai_addr, (int)ptr->ai_addrlen);
-	if (iResult == SOCKET_ERROR) {
+		// Connect to server.
+		iResult = connect(_sockfd, ptr->ai_addr, (int)ptr->ai_addrlen);
+	
+		if (iResult != SOCKET_ERROR) break; // successfully established connection
+
 		closesocket(_sockfd);
 		_sockfd = INVALID_SOCKET;
+		ptr = ptr->ai_next;
 	}
-
-	// Should really try the next address returned by getaddrinfo
-	// if the connect call failed
-	// But for this simple example we just free the resources
-	// returned by getaddrinfo and print an error message
 
 	freeaddrinfo(result);
 
