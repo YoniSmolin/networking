@@ -1,11 +1,8 @@
-/*
- * IRClient.cpp -- Kinect IR data client
-*/
-
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 
-#include "KinectClient.h" // networking class
+#include "PacketClient.h" // networking class
+#include "NetworkPacketProcessor.h"
 #include "Timer.h"  // telemetry class
 
 #include <windows.h>  // multithreading
@@ -18,12 +15,6 @@ using namespace cv;
 #define PORT "3490" // randomly chosen (must agree with the servers' port)
 #define SERVER_NAME_HEADER "JetsonBoard" // JetsonBoardi.local where i stands for the index of the board (written with red Sharpie on the board itself)
 #define SERVER_NAME_TAIL   ".local"
-
-#define ROWS 424 // depth image 1st dimension - # of rows
-#define COLS 512 // depth image 2nd dimension - # of columns
-
-#define IR_MAX 1024.0f // [mm]
-#define BRIGHTNESS 5.0f
 
 #define RECORDING_DIRECTORY "Recordings/" // name of parent directory where the recordings from different Kinects will be stored
 
@@ -112,16 +103,33 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 
 	_itoa_s(index, clientIndex, 3, 10); // 10 is the radix
 
-	KinectClient client(string(clientIndex), ROWS, COLS);
+	auto clientName = string(clientIndex);
+	Networking::PacketClient client(clientName);
 	cout << "Initialized client #" << clientIndex << " successfully" << endl; // not sure this printing is thread sage
 
 #pragma endregion
 
 #pragma region connect to server
-
+	
 	string serverName = string(SERVER_NAME_HEADER) + string(clientIndex) + string(SERVER_NAME_TAIL);
-	while (client.ConnectToServer(serverName.c_str(), PORT));// index == 1 ? "132.68.56.9":"132.68.49.41", PORT)); // loop until server goes up   //serverName.c_str(), PORT); // 
+	while (client.ConnectToServer(serverName.c_str(), PORT)); // loop until server goes up 
 	cout << "Connected to server #" << clientIndex << " successfully" << endl;
+
+#pragma endregion
+
+#pragma region obtain metadata from server
+
+	const Networking::ChannelProperties* channelProperties = client.ReceiveMetadataPacket();
+	cout << "client #" << clientIndex << " metadata: " << channelProperties->ToString() << endl;
+	client.AllocateBuffers();
+	cout << "Allocated netwrok buffers for client #" << clientIndex << endl;
+
+#pragma endregion
+
+#pragma region initialize packet processor
+
+	Networking::NetworkPacketProcessor packetProcessor(channelProperties);
+	cout << "Initialized packet processor for client #" << clientIndex << endl;
 
 #pragma endregion
 
@@ -149,24 +157,27 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 
 		telemetry.Start();
 
-		int numBytes = client.ReceiveMatrixCompressedWithPNG(); // after it is received the matrix is stored internally in the client object
+		auto packet = client.ReceivePacket(); // after it is received the matrix is stored internally in the client object
 
-		if (numBytes == 0)
+		if (packet.size() == 0)
 		{
 			FastestThreadFinished = true;
 		}
-		else if (numBytes > 0)
+		else
 		{
-			Mat lastFrame = (1 << 16) * (client.GetLatestFrameMat() / IR_MAX);
-			imshow(windowName, lastFrame * BRIGHTNESS);
+			auto lastFrame = packetProcessor.ProcessPacket(packet);
+			if (channelProperties->ChannelType == Networking::ChannelType::Depth) // lastFrame contains depth in mm but needs to be scaled for visualizatiuon purposes
+				lastFrame = ((1 << channelProperties->PixelSize * 8) / channelProperties->DepthExpectedMax) * lastFrame; 
+
+			imshow(windowName, lastFrame);
 			waitKey(1);
 
 			if (Recording)
 			{
-				imwrite(recordingDir + string("/") + to_string(frameNumber++) + string(".png"), client.GetLatestFrameMat()); // saving the correct depth values
+				imwrite(recordingDir + string("/") + to_string(frameNumber++) + string(".png"), lastFrame); // saving the correct depth values
 			}
 
-			telemetry.Stop(numBytes);
+			telemetry.Stop(packet.size());
 		}
 	}
 
