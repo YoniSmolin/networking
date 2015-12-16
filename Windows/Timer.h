@@ -15,7 +15,7 @@ public:
 	Timer(string name, int windowSize);
 
 	void  Start();
-	void  Stop(int numBytesMoved);
+	void  Stop(size_t numBytesMoved);
 	float AverageBandwidth(); // returns the average bit rate during the session, in units of [Mbps]
 
 private:
@@ -25,7 +25,7 @@ private:
 	LARGE_INTEGER _start, _end, _frequency;
 	float _accumulatedTime;
 	float _sessionBandwidthSum;
-	int  _accumulatedBytes;
+	size_t  _accumulatedBytes;
 	 
 	string _name;
 };

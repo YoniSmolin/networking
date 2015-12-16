@@ -17,7 +17,7 @@ void Timer::Start()
 	_sampleCounter++;
 }
 
-void Timer::Stop(int numBytesMoved)
+void Timer::Stop(size_t numBytesMoved)
 {
 	_accumulatedBytes += numBytesMoved;
 	 
