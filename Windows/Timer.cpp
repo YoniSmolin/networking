@@ -4,20 +4,26 @@
 #include "Timer.h"
 #include <stdio.h>
 
-Timer::Timer(string name, int windowSize) : _sampleCounter(0), _accumulatedTime(0), _accumulatedBytes(0), _name(name), _windowSize(windowSize), _windowsCounter(0), _sessionBandwidthSum(0)
+Timer::Timer(string name, int windowSize) : _sampleCounter(0), _accumulatedBytes(0), _name(name), _windowSize(windowSize), _windowsCounter(0), _sessionBandwidthSum(0), _start({0}), _end({0}), _firstIterationStart({0})
 {
 	QueryPerformanceFrequency(&_frequency);
 }
 
-void Timer::Start()
+void Timer::IterationStarted()
 {
 	if (_sampleCounter == 0)
-		QueryPerformanceCounter(&_start);
+	{
+		QueryPerformanceCounter(&_start); // first sample of the curernt window
+		if (_windowsCounter == 0)
+		{ // first sample of first samples windows
+			_firstIterationStart = _start;
+		}
+	}
 
 	_sampleCounter++;
 }
 
-void Timer::Stop(size_t numBytesMoved)
+void Timer::IterationEnded(size_t numBytesMoved)
 {
 	_accumulatedBytes += numBytesMoved;
 	 
@@ -34,6 +40,13 @@ void Timer::Stop(size_t numBytesMoved)
 		_sampleCounter = 0;
 		_windowsCounter++;
 	}
+}
+
+float Timer::TimeSinceFirstIteration()
+{
+	LARGE_INTEGER currentTime;
+	QueryPerformanceCounter(&currentTime);
+	return (float)(currentTime.QuadPart - _firstIterationStart.QuadPart) / _frequency.QuadPart;
 }
 
 float Timer::AverageBandwidth()

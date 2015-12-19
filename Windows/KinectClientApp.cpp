@@ -16,7 +16,8 @@ using namespace cv;
 #define SERVER_NAME_HEADER "JetsonBoard" // JetsonBoardi.local where i stands for the index of the board (written with red Sharpie on the board itself)
 #define SERVER_NAME_TAIL   ".local"
 
-#define RECORDING_DIRECTORY "Recordings/" // name of parent directory where the recordings from different Kinects will be stored
+#define RECORDING_DIRECTORY "../Recordings/" // path to the directory where the recordings from different Kinects will be stored (relative to solution .sln file)
+#define TIME_BETWEEN_SHOTS 5 // seconds to wait until the consecutive frame should be saved
 
 #define FRAMES_BETWEEN_TELEMETRY_MESSAGES 30 // every so many frames, the average FPS and BW will be printed to the command window
 
@@ -140,8 +141,6 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 
 	Timer telemetry(string("Kinect #") + string(clientIndex), FRAMES_BETWEEN_TELEMETRY_MESSAGES);
 
-	int frameNumber = 1;
-
 	string recordingDir = RECORDING_DIRECTORY + string(clientIndex);
 	if (Recording)
 	{
@@ -155,7 +154,7 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 		if (FastestThreadFinished) // as soon as one thread is done, everybody's closing their basta
 			break;
 
-		telemetry.Start();
+		telemetry.IterationStarted();
 
 		auto packet = client.ReceivePacket(); // after it is received the matrix is stored internally in the client object
 
@@ -170,14 +169,24 @@ unsigned __stdcall KinectClientThreadFunction(void* kinectIndex)
 				lastFrame = ((1 << channelProperties->PixelSize * 8) / channelProperties->DepthExpectedMax) * lastFrame; 
 
 			imshow(windowName, lastFrame);
-			waitKey(1);
+			int pressedKey = waitKey(1);
 
 			if (Recording)
 			{
-				imwrite(recordingDir + string("/") + to_string(frameNumber++) + string(".png"), lastFrame); // saving the correct depth values
+				static unsigned int savedFrameCount = 1;
+				if (pressedKey == 32) //(savedFrameCount * TIME_BETWEEN_SHOTS < telemetry.TimeSinceFirstIteration())
+				{
+					string fileType;
+					if (channelProperties->ChannelType == Networking::ChannelType::Color)
+						fileType = ".jpg";
+					else
+						fileType = ".png";
+					imwrite(recordingDir + string("/") + to_string(savedFrameCount) + fileType, lastFrame); // saving the correct depth values
+					savedFrameCount++;
+				}
 			}
 
-			telemetry.Stop(packet.size());
+			telemetry.IterationEnded(packet.size());
 		}
 	}
 
